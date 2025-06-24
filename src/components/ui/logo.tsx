@@ -8,11 +8,13 @@ interface LogoProps {
 const Logo = ({ className = "" }: LogoProps) => {
   return (
     <Link to="/" className={`block ${className}`}>
-      <img
-        src="https://i.postimg.cc/pXxdtDJz/quiz-online-logo.png"
-        alt="ACOEM Logo"
-        className="h-10 w-auto"
-      />
+      <div className="flex items-center space-x-2">
+        <img
+          src="https://i.postimg.cc/pXxdtDJz/quiz-online-logo.png"
+          alt="Quiz Online Logo"
+          className="h-12 w-auto ml-16"
+        />
+      </div>
     </Link>
   );
 };
