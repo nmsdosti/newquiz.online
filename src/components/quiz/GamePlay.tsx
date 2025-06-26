@@ -422,6 +422,15 @@ const GamePlay = () => {
       return;
     }
 
+    if (!sessionId) {
+      toast({
+        title: "Invalid session",
+        description: "Game session not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       console.log(
         "[START_GAME] Starting game with",
@@ -446,7 +455,10 @@ const GamePlay = () => {
         })
         .eq("id", sessionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("[START_GAME] Database update error:", error);
+        throw new Error(`Failed to start game: ${error.message}`);
+      }
 
       // Set the current question index first
       setCurrentQuestionIndex(0);
@@ -464,16 +476,21 @@ const GamePlay = () => {
       setLastUpdateTime(Date.now());
 
       // Broadcast game start to all participants
-      await supabase.channel(`game_${sessionId}_sync`).send({
-        type: "broadcast",
-        event: "game_started",
-        payload: {
-          quiz_id: quiz.id,
-          total_questions: questions.length,
-          first_question: questions[0],
-          timestamp: Date.now(),
-        },
-      });
+      try {
+        await supabase.channel(`game_${sessionId}_sync`).send({
+          type: "broadcast",
+          event: "game_started",
+          payload: {
+            quiz_id: quiz.id,
+            total_questions: questions.length,
+            first_question: questions[0],
+            timestamp: Date.now(),
+          },
+        });
+      } catch (broadcastError) {
+        console.warn("[START_GAME] Broadcast failed:", broadcastError);
+        // Continue even if broadcast fails
+      }
 
       console.log(
         "[START_GAME] Starting timer for first question with",
@@ -483,11 +500,17 @@ const GamePlay = () => {
 
       // Start the timer for the first question (index 0) immediately
       startTimer(0, questions[0].time_limit);
+
+      toast({
+        title: "Game started!",
+        description: "The quiz has begun. Good luck to all players!",
+      });
     } catch (error: any) {
       console.error("[START_GAME] Error:", error);
       toast({
         title: "Error starting game",
-        description: error.message || "Something went wrong",
+        description:
+          error.message || "Something went wrong while starting the game",
         variant: "destructive",
       });
     }
@@ -1142,9 +1165,11 @@ const GamePlay = () => {
   return (
     <div className="min-h-screen bg-[#FF6952] pt-16 pb-12">
       <div className="w-full bg-white flex justify-between items-center px-6 py-4 shadow-md fixed top-0 left-0 right-0 z-50">
-        <Link to="/">
-          <Logo className="h-12 w-auto ml-16" />
-        </Link>
+        <div className="ml-16">
+          <Link to="/">
+            <Logo className="h-12 w-auto" noMargin={true} />
+          </Link>
+        </div>
         <UserMenu />
       </div>
       <div className="max-w-4xl mx-auto px-4 mt-16">
@@ -1527,9 +1552,11 @@ const GameSummary: React.FC<GameSummaryProps> = ({
   return (
     <div className="min-h-screen bg-[#f5f5f7] pt-16 pb-12">
       <div className="w-full bg-white flex justify-between items-center px-6 py-4 shadow-md fixed top-0 left-0 right-0 z-50">
-        <Link to="/">
-          <Logo className="h-12 w-auto ml-16" />
-        </Link>
+        <div className="ml-16">
+          <Link to="/">
+            <Logo className="h-12 w-auto" noMargin={true} />
+          </Link>
+        </div>
         <UserMenu />
       </div>
 

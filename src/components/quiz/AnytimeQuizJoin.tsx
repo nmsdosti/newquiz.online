@@ -148,9 +148,11 @@ const AnytimeQuizJoin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#7C3AED] to-[#7C3AED] text-white flex items-center justify-center p-4">
       <div className="w-full bg-white flex justify-between items-center px-6 py-4 shadow-md fixed top-0 left-0 right-0 z-50">
-        <Link to="/">
-          <Logo className="h-12 w-auto ml-16" />
-        </Link>
+        <div className="ml-16">
+          <Link to="/">
+            <Logo className="h-12 w-auto" noMargin={true} />
+          </Link>
+        </div>
         <UserMenu />
       </div>
       <Card className="max-w-md w-full bg-white/10 backdrop-blur-md border-white/20 shadow-xl">

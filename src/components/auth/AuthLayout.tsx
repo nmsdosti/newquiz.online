@@ -7,10 +7,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-gradient-to-b from-[#FF6952] to-[#FF6952] text-white">
       {/* Modern navigation */}
       <header className="fixed top-0 z-50 w-full bg-white backdrop-blur-md shadow-md border-b border-skyblue/30">
-        <div className="max-w-[980px] mx-16 flex h-20 items-center justify-left px-4">
+        <div className="max-w-[980px] mx-auto flex h-20 items-center justify-start px-4 ml-16">
           <div>
             <Link to="/">
-              <Logo className="h-12 w-auto ml-16" />
+              <Logo className="h-12 w-auto" noMargin={true} />
             </Link>
           </div>
         </div>

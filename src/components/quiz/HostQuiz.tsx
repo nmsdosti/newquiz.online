@@ -91,8 +91,21 @@ const HostQuiz = () => {
 
   const startGameWithMode = async (mode: "live" | "poll" | "anytime") => {
     try {
+      // Validate that a quiz is selected
+      if (!selectedQuiz) {
+        throw new Error("No quiz selected");
+      }
+
+      // Validate that the user is authenticated
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+
       // Generate a random 6-digit game PIN
       const pin = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log(`Creating ${mode} game with PIN: ${pin}`);
+      console.log(`Selected quiz ID: ${selectedQuiz}`);
+      console.log(`User ID: ${user.id}`);
 
       if (mode === "live") {
         // Create a new live game session
@@ -100,26 +113,33 @@ const HostQuiz = () => {
           .from("game_sessions")
           .insert({
             quiz_id: selectedQuiz,
-            host_id: user?.id,
+            host_id: user.id,
             game_pin: pin,
             status: "waiting",
             game_mode: "live",
           })
           .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Live game session creation error:", error);
+          throw new Error(
+            `Failed to create live game session: ${error.message || error.details || JSON.stringify(error)}`,
+          );
+        }
         if (!data || data.length === 0)
-          throw new Error("Failed to create game session");
+          throw new Error("Failed to create game session - no data returned");
 
+        console.log("Created live game session:", data[0]);
         setGamePin(pin);
-        navigate(`/game/${data[0].id}`);
+        setGameMode("live");
+        // Don't navigate immediately for live games, show PIN first
       } else if (mode === "poll") {
         // Create a new poll session
         const { data, error } = await supabase
           .from("poll_sessions")
           .insert({
             quiz_id: selectedQuiz,
-            host_id: user?.id,
+            host_id: user.id,
             game_pin: pin,
             status: "waiting",
           })
@@ -127,23 +147,24 @@ const HostQuiz = () => {
 
         if (error) {
           console.error("Poll session creation error:", error);
-          throw error;
+          throw new Error(
+            `Failed to create poll session: ${error.message || error.details || JSON.stringify(error)}`,
+          );
         }
         if (!data || data.length === 0)
-          throw new Error("Failed to create poll session");
+          throw new Error("Failed to create poll session - no data returned");
 
         console.log("Created poll session:", data[0]);
         setGamePin(pin);
         setGameMode("poll");
         // Don't navigate immediately, show the game PIN first
-        // navigate(`/poll/${data[0].id}`);
       } else if (mode === "anytime") {
         // Create a new anytime quiz session
         const { data, error } = await supabase
           .from("anytime_quiz_sessions")
           .insert({
             quiz_id: selectedQuiz,
-            host_id: user?.id,
+            host_id: user.id,
             game_pin: pin,
             status: "active",
           })
@@ -151,23 +172,44 @@ const HostQuiz = () => {
 
         if (error) {
           console.error("Anytime quiz session creation error:", error);
-          throw error;
+          throw new Error(
+            `Failed to create anytime quiz session: ${error.message || error.details || JSON.stringify(error)}`,
+          );
         }
         if (!data || data.length === 0)
-          throw new Error("Failed to create anytime quiz session");
+          throw new Error(
+            "Failed to create anytime quiz session - no data returned",
+          );
 
         console.log("Created anytime quiz session:", data[0]);
         setGamePin(pin);
+        setGameMode("anytime");
+        // Navigate immediately for anytime quizzes
         navigate(`/anytime-quiz/${data[0].id}`);
+        setShowGameModeSelection(false);
+        return;
       }
 
       setShowGameModeSelection(false);
+
+      toast({
+        title: "Game created successfully!",
+        description: `${mode.charAt(0).toUpperCase() + mode.slice(1)} game is ready with PIN: ${pin}`,
+      });
     } catch (error: any) {
+      console.error("Error starting game:", error);
+      const errorMessage =
+        error?.message ||
+        error?.details ||
+        (typeof error === "string"
+          ? error
+          : "Something went wrong while creating the game");
       toast({
         title: "Error starting game",
-        description: error.message || "Something went wrong",
+        description: errorMessage,
         variant: "destructive",
       });
+      setShowGameModeSelection(false);
     }
   };
 
@@ -235,9 +277,11 @@ const HostQuiz = () => {
   return (
     <div className="min-h-screen bg-[#FF6952] pt-16 pb-12">
       <div className="w-full bg-white flex justify-between items-center px-6 py-4 shadow-md fixed top-0 left-0 right-0 z-50">
-        <Link to="/">
-          <Logo className="h-12 w-auto ml-16" />
-        </Link>
+        <div className="ml-16">
+          <Link to="/">
+            <Logo className="h-12 w-auto" noMargin={true} />
+          </Link>
+        </div>
         <UserMenu />
       </div>
       <div className="max-w-4xl mx-auto px-4 mt-16">
